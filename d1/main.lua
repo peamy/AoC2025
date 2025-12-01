@@ -3,6 +3,7 @@ input = {}
 processing = false
 total = 0
 done = false
+was_exact = false
 
 center_x = 400
 center_y = 300
@@ -35,6 +36,24 @@ end
 
 
 function love.load()
+
+    for line in love.filesystem.lines("testinput.txt") do
+        value = tonumber(line:sub(2))
+        if line:sub(1,1) == "L" then
+            value = -value
+        end
+        process_one(value)
+    end
+    print(total)        
+
+
+    state = 50
+    input = {}
+    processing = false
+    total = 0
+    done = false
+    was_exact = false
+
     for line in love.filesystem.lines("input.txt") do
         value = tonumber(line:sub(2))
         if line:sub(1,1) == "L" then
@@ -63,11 +82,48 @@ function love.update()
        return 
     end
 
-    movement = table.remove(input, 1)
-    newstate = (100 + state + movement) % 100
-    state = newstate
-    if state == 0 then
-        total = total + 1
+    while #input > 0 do
+        movement = table.remove(input, 1)
+        process_one(movement)
     end
-    --  processing = false
+
+    -- processing = false
+    -- 3264 too low
+    -- 7668 too high
+    -- 5407 no
+    -- 5501 ?
+    -- 5829 no
+    -- 6047 no
+    -- 6469 ? -> probably not
+end
+
+function process_one(movement)    
+    newstate = state + movement
+
+    add = getHits(state, newstate)
+
+    print(state, movement, newstate, add)
+
+    -- print("state is ", state)
+    -- print("rotating ", movement)
+    -- print("new state is ", newstate, newstate % 100)
+    -- print("Add        ",add)
+    -- print("---------------")
+    
+    newstate = newstate % 100
+    state = newstate
+
+    was_exact = state == 0
+end
+
+function getHits(old, new)
+    add = 0
+    if new >= 100 or new <= 0 then
+        if new <= 0 and old > 0 then
+            add = add + 1
+        end
+        add = add + math.floor(math.abs(new / 100))
+        total = total + add
+    end
+    return add
 end
